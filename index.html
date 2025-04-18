@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Todoアプリ</title>
+    <style>
+        body {
+            margin: 20px;
+            font-family: Arial, sans-serif;
+            background-color: #000;
+            color: white;
+        }
+
+        h1 {
+            text-align: center;
+        }
+
+        ul {
+            list-style-type: none;
+            padding: 0;
+        }
+
+        li {
+            margin: 5px 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        button {
+            margin-left: 10px;
+        }
+
+        /* スロットコンテナ */
+        .slot-container {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            display: flex;
+            gap: 20px;
+            z-index: 10;
+            display: none;
+        }
+
+        .slot {
+            font-size: 3rem;
+            font-weight: bold;
+            color: white;
+            background: linear-gradient(45deg, #444, #888);
+            border: 2px solid #fff;
+            box-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+            padding: 20px;
+            border-radius: 10px;
+            width: 100px;
+            height: 100px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .slot.win {
+            background: linear-gradient(45deg, gold, orange);
+            box-shadow: 0 0 20px gold;
+            transform: scale(1.2);
+        }
+
+        /* 光の放射エフェクト */
+        .energy-effect {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 300px;
+            height: 300px;
+            background: radial-gradient(circle, rgba(255, 255, 255, 0.8), rgba(255, 255, 255, 0) 70%);
+            animation: pulse 1.5s infinite;
+            z-index: 5;
+            display: none;
+        }
+
+        @keyframes pulse {
+            0% {
+                transform: translate(-50%, -50%) scale(1);
+                opacity: 1;
+            }
+            50% {
+                transform: translate(-50%, -50%) scale(1.5);
+                opacity: 0.5;
+            }
+            100% {
+                transform: translate(-50%, -50%) scale(2);
+                opacity: 0;
+            }
+        }
+
+        /* 背景の虹色点滅 */
+        .rainbow-background {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, red, orange, yellow, green, blue, indigo, violet, red);
+            background-size: 400% 400%;
+            animation: rainbowFlash 1.5s infinite;
+            z-index: -1;
+            display: none;
+        }
+
+        @keyframes rainbowFlash {
+            0% { background-position: 0% 50%; opacity: 0.5; }
+            50% { background-position: 100% 50%; opacity: 1; }
+            100% { background-position: 0% 50%; opacity: 0.5; }
+        }
+    </style>
+</head>
+<body>
+    <h1>CR Todo</h1>
+    <input type="text" id="todoInput" placeholder="やることを入力してください">
+    <button id="addButton">追加</button>
+    <ul id="todoList"></ul>
+
+    <!-- スロット演出用 -->
+    <div id="slotContainer" class="slot-container">
+        <div id="slot1" class="slot">0</div>
+        <div id="slot2" class="slot">0</div>
+        <div id="slot3" class="slot">0</div>
+    </div>
+
+    <!-- 光の放射エフェクト -->
+    <div id="energyEffect" class="energy-effect"></div>
+
+    <!-- 背景の虹色点滅 -->
+    <div id="rainbowBackground" class="rainbow-background"></div>
+
+    <script>
+        // 要素の取得
+        const todoInput = document.querySelector("#todoInput");
+        const addButton = document.querySelector("#addButton");
+        const todoList = document.querySelector("#todoList");
+        const slotContainer = document.querySelector("#slotContainer");
+        const slot1 = document.querySelector("#slot1");
+        const slot2 = document.querySelector("#slot2");
+        const slot3 = document.querySelector("#slot3");
+        const energyEffect = document.querySelector("#energyEffect");
+        const rainbowBackground = document.querySelector("#rainbowBackground");
+
+        // 追加ボタンの処理
+        addButton.addEventListener("click", () => {
+            const todoText = todoInput.value;
+
+            if (todoText === "") {
+                alert("やることを入力してください！");
+                return;
+            }
+
+            // 新しいTodo項目を作成
+            const listItem = document.createElement("li");
+
+            // チェックボックスを作成
+            const checkbox = document.createElement("input");
+            checkbox.type = "checkbox";
+
+            // チェックボックスのイベントリスナー
+            checkbox.addEventListener("change", () => {
+                if (checkbox.checked) {
+                    // スロット演出を開始
+                    startSlotSpin(() => {
+                    });
+                }
+            });
+
+            // 削除ボタンを作成
+            const deleteButton = document.createElement("button");
+            deleteButton.textContent = "削除";
+            deleteButton.addEventListener("click", () => {
+                todoList.removeChild(listItem);
+            });
+
+            // リスト項目に要素を追加
+            listItem.textContent = todoText;
+            listItem.prepend(checkbox); // チェックボックスを先頭に追加
+            listItem.appendChild(deleteButton);
+            todoList.appendChild(listItem);
+
+            // 入力欄を空に
+            todoInput.value = "";
+        });
+
+        // スロット演出を開始
+        function startSlotSpin(callback) {
+            slotContainer.style.display = "flex"; // スロットを表示
+            let slot1Value = 0;
+            let slot2Value = 0;
+            let slot3Value = 0;
+
+            // 当たりの確率を設定（5%の確率で当たり）
+            const isWin = Math.random() < 0.05;
+
+            // 各スロットの回転
+            const spin1 = setInterval(() => {
+                slot1Value = Math.floor(Math.random() * 10); // 0〜9のランダムな数字
+                slot1.textContent = slot1Value;
+            }, 100);
+
+            const spin2 = setInterval(() => {
+                slot2Value = Math.floor(Math.random() * 10); // 0〜9のランダムな数字
+                slot2.textContent = slot2Value;
+            }, 100);
+
+            const spin3 = setInterval(() => {
+                slot3Value = Math.floor(Math.random() * 10); // 0〜9のランダムな数字
+                slot3.textContent = slot3Value;
+            }, 100);
+
+            // スロットを順番に停止
+            setTimeout(() => {
+                clearInterval(spin1); // スロット1を停止
+                if (isWin) slot1Value = 7; // 当たりの場合は「7」に固定
+                slot1.textContent = slot1Value;
+
+                setTimeout(() => {
+                    clearInterval(spin2); // スロット2を停止
+                    if (isWin) slot2Value = 7; // 当たりの場合は「7」に固定
+                    slot2.textContent = slot2Value;
+
+                    setTimeout(() => {
+                        clearInterval(spin3); // スロット3を停止
+                        if (isWin) slot3Value = 7; // 当たりの場合は「7」に固定
+                        slot3.textContent = slot3Value;
+
+                        // 結果を判定
+                        if (isWin) {
+                            showWinEffect();
+                        } else {
+                            alert("ハズレ！");
+                        }
+
+                        // スロットを非表示にする
+                        setTimeout(() => {
+                            slotContainer.style.display = "none";
+                            callback(); // タスク削除を実行
+                        }, 2000); // 2秒後に非表示
+                    }, 1000); // スロット3を1秒後に停止
+                }, 1000); // スロット2を1秒後に停止
+            }, 1000); // スロット1を1秒後に停止
+        }
+
+        // 当たりの演出を表示
+        function showWinEffect() {
+            // 光の放射エフェクトを表示
+            energyEffect.style.display = "block";
+
+            // 背景の虹色点滅を表示
+            rainbowBackground.style.display = "block";
+
+            // スロットを光らせる
+            slot1.classList.add("win");
+            slot2.classList.add("win");
+            slot3.classList.add("win");
+
+            setTimeout(() => {
+                energyEffect.style.display = "none"; // 光のエフェクトを非表示
+                rainbowBackground.style.display = "none"; // 背景を非表示
+                slot1.classList.remove("win");
+                slot2.classList.remove("win");
+                slot3.classList.remove("win");
+            }, 3000); // 3秒後に非表示
+        }
+    </script>
+</body>
+</html>
