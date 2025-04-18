@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Todoアプリ</title>
+    <title>Todoリスト - 保存機能付き</title>
     <style>
         body {
             margin: 20px;
@@ -76,6 +76,7 @@
             width: 300px;
             height: 300px;
             background: radial-gradient(circle, rgba(255, 255, 255, 0.8), rgba(255, 255, 255, 0) 70%);
+            border-radius: 50%;
             animation: pulse 1.5s infinite;
             z-index: 5;
             display: none;
@@ -118,7 +119,7 @@
     </style>
 </head>
 <body>
-    <h1>CR Todo</h1>
+    <h1>Todoリスト</h1>
     <input type="text" id="todoInput" placeholder="やることを入力してください">
     <button id="addButton">追加</button>
     <ul id="todoList"></ul>
@@ -148,6 +149,58 @@
         const energyEffect = document.querySelector("#energyEffect");
         const rainbowBackground = document.querySelector("#rainbowBackground");
 
+        // ローカルストレージからタスクを取得
+        const savedTasks = JSON.parse(localStorage.getItem("tasks")) || [];
+
+        // タスクを表示
+        function renderTasks() {
+            todoList.innerHTML = ""; // 一旦リストをクリア
+            savedTasks.forEach((task, index) => {
+                const listItem = document.createElement("li");
+
+                // チェックボックスを作成
+                const checkbox = document.createElement("input");
+                checkbox.type = "checkbox";
+                checkbox.checked = task.completed;
+
+                // チェックボックスのイベントリスナー
+                checkbox.addEventListener("change", () => {
+                    if (checkbox.checked) {
+                        // スロット演出を開始
+                        startSlotSpin(() => {
+                            // スロット演出後にタスクを削除
+                            savedTasks.splice(index, 1);
+                            saveTasks();
+                            renderTasks();
+                        });
+                    } else {
+                        task.completed = checkbox.checked;
+                        saveTasks();
+                    }
+                });
+
+                // 削除ボタンを作成
+                const deleteButton = document.createElement("button");
+                deleteButton.textContent = "削除";
+                deleteButton.addEventListener("click", () => {
+                    savedTasks.splice(index, 1);
+                    saveTasks();
+                    renderTasks();
+                });
+
+                // リスト項目に要素を追加
+                listItem.textContent = task.text;
+                listItem.prepend(checkbox); // チェックボックスを先頭に追加
+                listItem.appendChild(deleteButton);
+                todoList.appendChild(listItem);
+            });
+        }
+
+        // タスクをローカルストレージに保存
+        function saveTasks() {
+            localStorage.setItem("tasks", JSON.stringify(savedTasks));
+        }
+
         // 追加ボタンの処理
         addButton.addEventListener("click", () => {
             const todoText = todoInput.value;
@@ -157,34 +210,10 @@
                 return;
             }
 
-            // 新しいTodo項目を作成
-            const listItem = document.createElement("li");
-
-            // チェックボックスを作成
-            const checkbox = document.createElement("input");
-            checkbox.type = "checkbox";
-
-            // チェックボックスのイベントリスナー
-            checkbox.addEventListener("change", () => {
-                if (checkbox.checked) {
-                    // スロット演出を開始
-                    startSlotSpin(() => {
-                    });
-                }
-            });
-
-            // 削除ボタンを作成
-            const deleteButton = document.createElement("button");
-            deleteButton.textContent = "削除";
-            deleteButton.addEventListener("click", () => {
-                todoList.removeChild(listItem);
-            });
-
-            // リスト項目に要素を追加
-            listItem.textContent = todoText;
-            listItem.prepend(checkbox); // チェックボックスを先頭に追加
-            listItem.appendChild(deleteButton);
-            todoList.appendChild(listItem);
+            // 新しいタスクを保存
+            savedTasks.push({ text: todoText, completed: false });
+            saveTasks();
+            renderTasks();
 
             // 入力欄を空に
             todoInput.value = "";
@@ -197,8 +226,8 @@
             let slot2Value = 0;
             let slot3Value = 0;
 
-            // 当たりの確率を設定（5%の確率で当たり）
-            const isWin = Math.random() < 0.05;
+            // 当たりの確率を設定（10%の確率で当たり）
+            const isWin = Math.random() < 0.1;
 
             // 各スロットの回転
             const spin1 = setInterval(() => {
@@ -270,6 +299,9 @@
                 slot3.classList.remove("win");
             }, 3000); // 3秒後に非表示
         }
+
+        // ページ読み込み時にタスクを表示
+        renderTasks();
     </script>
 </body>
 </html>
