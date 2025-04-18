@@ -168,10 +168,6 @@
                     if (checkbox.checked) {
                         // スロット演出を開始
                         startSlotSpin(() => {
-                            // スロット演出後にタスクを削除
-                            savedTasks.splice(index, 1);
-                            saveTasks();
-                            renderTasks();
                         });
                     } else {
                         task.completed = checkbox.checked;
